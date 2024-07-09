@@ -1,0 +1,469 @@
+---
+title: Data wrangling with R
+subtitle: 'In this chapter, you will learn to use tidyr and dplyr from the tidyverse in R for tidying your data set and data maniplulation.'
+title-block-banner: yes
+engine: knitr
+format:
+  html:
+    from: markdown+emoji
+    toc: true
+filters:
+    - webr-teachr
+webr:
+    packages: [palmerpenguins, rlang, dplyr, tidyr]
+---
+
+```{r}
+#| echo: false
+#| output: false
+
+# library
+library(palmerpenguins)
+library(tidyverse)
+``` 
+
+# Data Transformation and Aggregation
+
+**dplyr** provides a selection of tools for the most common data wrangling tasks. There are a few simple yet handy functions.
+
+* `select()`
+* `filter()`
+* `arrange()`
+* `mutate()`
+* `group_by()` along with `ungroup()`
+* `count()`
+* `case_when()`
+
+:::{.callout-note}
+This is a very big topic, and we will not cover all of the useful functions in this chapter. Here is a cheat sheet to help you learn more about [dplyr](https://github.com/rstudio/cheatsheets/blob/main/data-transformation.pdf).
+:::
+
+
+## select()
+
+This function allows you to pick particular variables from your data.
+
+```{r}
+#| eval: false
+
+data |>
+    select(variable)
+```
+
+This is not only limited to one variable selection. You can select multiple variables by separating the column name with the comma.
+
+```{r}
+#| eval: false
+
+data |>
+    select(variable1, variable2)
+```
+
+::: {.callout-caution}
+## Your turn!
+We will be using penguin data from the palmerpenguins package.
+
+Let's say that you want to look at whether the **body mass** changes over the **year**.
+
+Hint: To look at the column names of the data, you can use the functions `colnames()`
+:::
+
+```{webr-teachr}
+# library the packages needed
+library(palmerpenguins)
+library(dplyr)
+
+# Select the column of interests
+penguins |>
+    <<select(body_mass_g, year)>>
+
+???
+
+c(
+    "Did you use the right function?" != search_ast(.code, .fn = select),
+    "Did you pick the right variable?" != all(c("body_mass_g", "year") %in% all.vars(.code))
+)
+```
+
+### Selection helpers
+
+There are many helper functions that allow you to select variables by matching the patterns in the column's name. Let's look at a few examples.
+
+* `starts_with()`: select all variables that start with a prefix.
+
+```{r}
+#| eval: false
+penguins |>
+    select(starts_with("bill"))
+```
+
+```{r}
+#| echo: false
+penguins |>
+    select(starts_with("bill")) |>
+    head()
+```
+
+* `ends_with()`: select all variables that ends with a suffix.
+
+```{r}
+#| eval: false
+penguins |>
+    select(ends_with("mm"))
+```
+
+```{r}
+#| echo: false
+penguins |>
+    select(ends_with("mm")) |>
+    head()
+```
+
+* `contains()`: select all variables that contains a literal string.
+
+```{r}
+#| eval: false
+penguins |>
+    select(contains("length"))
+```
+
+```{r}
+#| echo: false
+penguins |>
+    select(contains("length")) |>
+    head()
+```
+
+* `num_range()`: select all variables that matches a numerical range like x01, x02, x03.
+
+```{r}
+#| eval: false
+billboard |>
+    select(num_range("wk", 10:15))
+```
+
+```{r}
+#| echo: false
+billboard |> 
+    select(num_range("wk", 10:15)) |>
+    head()
+```
+
+
+## filter()
+
+This allow you to extract observation from the data based on a given condition.
+
+```{r}
+#| eval: false
+
+data |>
+    filter(expression)
+```
+
+For the expression field, there are many functions and operators that are useful for constructing the expressions.
+
+* `==`, `>`, `>=` etc
+* `&`, `|`, `!`, `xor()`
+* `is.na()`
+* `between()`, `near()`
+
+```{r}
+#| eval: false
+penguins |>
+    filter(species = "Gentoo")
+```
+
+```{r}
+#| echo: false
+penguins |>
+    filter(species == "Gentoo") |>
+    head()
+```
+
+
+## arrange()
+
+It is for sorting your data based on one or more variables. By default, it will arrange your data in ascending order. If you want to sort by descending order, it can be done using the `desc()` function.
+
+```{r}
+#| eval: false
+penguins |>
+    arrange(bill_length_mm)
+
+penguins |>
+    arrange(desc(bill_length_mm))
+```
+
+```{r}
+#| echo: false
+penguins |>
+    arrange(bill_length_mm) |>
+    head()
+
+penguins |>
+    arrange(desc(bill_length_mm)) |>
+    head()
+```
+
+::: {.callout-tip}
+## Did you know
+
+What do you think will happen if you sort the penguin's data by the species where it is a character variable? If you guess that it will sort in **alphabetical order**, you are correct!!!
+:::
+
+
+## mutate()
+
+This function is for creating new variable or modify the existing one.
+
+```{r}
+#| eval: false
+
+data |>
+    mutate(variable_name = value)
+```
+
+The **"variable_name"**, this can be the existing variable you are going to modify or  new variable name you are trying to create. The **"value"** is what will be assigned to the **"variable_name"**.
+
+Here is an example on using mutata function to modify the **existing** variable
+
+```{r}
+#| eval: false
+penguins |>
+    mutate(sex = ifelse(sex == "male", "M", "F"))
+```
+
+```{r}
+#| echo: false
+penguins |>
+    mutate(sex = ifelse(sex == "male", "M", "F")) |>
+    select(species, sex) |>
+    head()
+```
+
+::: {.callout-caution}
+## Your turn!
+Let said that you think that the body mass of the penguins should be expressed as kilogram instead of gram. How could you create a **new** variable? Make sure you name it as `body_mass_kg`.
+
+Hint: The conversion from gram to kilogram can be expressed in a forms of $kg = g/1000$
+:::
+
+```{webr-teachr}
+# library the packages needed
+library(palmerpenguins)
+library(dplyr)
+
+# Select the column of interests
+penguins |>
+    <<mutate(body_mass_kg = body_mass_g/1000)>>
+
+???
+
+c(
+    "Did you use the right function?" != search_ast(.code, .fn = mutate),
+    "Did you provide the right expression?" != search_ast(.code, .expr = body_mass_g/1000)
+)
+```
+
+
+## group_by()
+
+It allows you to take the existing data and group the specific variables together for future operations. For example, with penguins data, if you want to rank penguins by weights within each species, instead of splitting the dataset by species, rank them individually and then rejoin the data. You can use the `group_by` function together with `mutate` to achieve the same operation.
+
+```{r}
+#| eval: false
+penguins |>
+    group_by(species) |>
+    mutate(ranking = rank(body_mass_g, ties.method = "min")) |>
+    ungroup()
+```
+
+```{r}
+penguins |>
+    group_by(species) |>
+    mutate(ranking = rank(body_mass_g, ties.method = "min")) |>
+    ungroup() |>
+    select(species, body_mass_g, ranking) |>
+    head()
+```
+
+:::{.callout-note}
+It is a good practice to use the `ungroup` function after you have done the operations. If you have not **ungrouped** the data, whatever operations you do after will take into account the grouping whether you want it or not.
+:::
+
+
+## summarize()
+As the name mentioned, it summarizes data into a new data frame based on the groupings and different arguments you included. The summary statistics are something you have to create very often. Here is an example of the summary statistics based on the penguin species.
+
+```{r}
+penguins |>
+    group_by(species) |>
+    summarize(
+        Average_body_mass = mean(body_mass_g, na.rm = TRUE),
+        Median_body_mass = median(body_mass_g, na.rm = TRUE),
+        SD_body_mass = sd(body_mass_g, na.rm = TRUE))
+```
+
+:::{.callout-note}
+The `na.rm` argument in the function is for ignoring the **NAs** values when calculating each statistic.
+:::
+
+:::{.callout-tip}
+## Did you know
+
+You may have noticed that we use the letter **z** in words like **summarize**. In British English, you might be more familiar with spelling it as **summarise**. In tidyverse, you can use either spelling when calling a function. So, whether you're used to writing summarize or summarising, the functionality is still the same either way.
+:::
+
+
+## count()
+A convenient function for getting the number of observations based on groupings. Previously, if you wanted to see how many penguins were observed for each species and sex and sort them from highest to lowest, the code would look something like this:
+
+```{r}
+penguins |>
+    group_by(species, sex) |>
+    summarize(n = n(), .groups = "drop") |>
+    arrange(desc(n))
+```
+
+However, the `count` function allows you to achieve the same result with less work. 
+
+```{r}
+penguins |>
+    count(species, sex, sort = TRUE)
+```
+
+:::{.callout-tip}
+Setting `.groups = "drop"` in the `summarize` function is similar to using the `ungroup` function. #check with mitch or cynthia
+:::
+
+
+## case_when()
+The function allows you to test multiple conditions and assign the specified values if it is `TRUE`.
+
+```{r}
+#| eval: false
+penguins |>
+    mutate(body_mass = ifelse(
+        body_mass_g > 4750, 
+            "heavy",
+            ifelse(
+                between(body_mass_g, 3550, 4750),
+                "average",
+                "light"
+            )))
+```
+
+```{r}
+#| echo: false
+penguins |>
+    mutate(body_mass = ifelse(
+        body_mass_g > 4750, 
+            "heavy",
+            ifelse(
+                between(body_mass_g, 3550, 4750),
+                "average",
+                "light"
+            ))) |>
+    na.omit() |>
+    select(species, body_mass_g, body_mass) |>
+    head()
+```
+
+You can see how messy it can get even with just two conditions for the `ifelse` function. Now compared to the `case_when` function:
+
+```{r}
+#| eval: false
+penguins |>
+    mutate(body_mass = case_when(
+        between(body_mass_g, 3550, 4750) ~ "average",
+        body_mass_g > 4750 ~ "heavy",
+        .default = "light"
+    ))
+```
+
+```{r}
+#| echo: false
+penguins |>
+    mutate(body_mass = case_when(
+        between(body_mass_g, 3550, 4750) ~ "average",
+        body_mass_g > 4750 ~ "heavy",
+        .default = "light"
+    )) |>
+    na.omit() |>
+    select(species, body_mass_g, body_mass) |>
+    head()
+```
+
+:::{.callout-note}
+You should order the tests in the `case_when` function from **specific** to **general** and make sure to keep track of how those ambiguous rows are being treated. `.default` here is equivalent to the `else` statement.
+:::
+
+:::{.callout-tip}
+If this `3550 <= body_mass_g <= 4750` is the condition you are trying to check, the equivalent of this would be `between(body_mass_g, 3550, 4750)`.
+:::
+
+
+# Joining datasets
+
+Most of the time, you will need to use information from different datasets for your data analysis. This is why learning multiple types of joins to accommodate different needs is important. 
+
+There are many types of join in the `dplyr` package. However, we are going to focus on the one that got used often, **mutating joins**. Mutating joins add columns from one dataset to another by matching observations based on the keys. 
+
+For this section, we are going to use a synthetic dataset.
+
+```{r}
+homework1 <- tibble(name = c('Alphonso', 'Daisy', 'Philip'), 
+                    student_no = c(456,100,102), marks = c(80, 65, 34))
+homework2 <- tibble(name = c('Alphonso', 'Philip', 'Melinda'), 
+                    student_no = c(456,102,432), marks = c(85, 97, 56))
+```
+
+```{r}
+#| echo: false
+homework1
+homework2
+```
+
+
+<!-- Joins diagram -->
+
+## inner_join()
+Only keep observations that are present in both tables. 
+
+```{r}
+inner_join(homework1, homework2, by = c('name', 'student_no'))
+```
+
+:::{.callout-note}
+You may have noticed that the column names of the return table have either `.x` or `.y` attached to `marks`. The reason for this is that the join function is trying to return all the columns, but with the variable name the same for both tables, it uses `.x` and `.y` to distinguish which variables are from the **first** table (`.x`) and which one is from the **second** table (`.y`).
+:::
+
+## left_join()
+Left joins start with the left data set (the first argument) and search in the right data set (the second argument), looking for the same value keys to add to the left dataset.
+
+```{r}
+left_join(homework1, homework2, by = c('name', 'student_no'))
+```
+
+:::{.callout-note}
+
+The `NA` values in the table return mean that there is no matching data, or if you think in this context, Daisy did not submit her second homework.
+
+:::
+
+
+## right_join()
+Right joins start with the right data set (the second argument) and search in the left data set (the first argument), looking for the same value keys to add to the right dataset.
+
+```{r}
+right_join(homework1, homework2, by = c('name', 'student_no'))
+```
+
+
+## full_join
+Return all the rows.
+
+```{r}
+full_join(homework1, homework2, by = c('name', 'student_no'))
+```
